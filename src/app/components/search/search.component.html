@@ -1,0 +1,69 @@
+<section class="search-section">
+  <form class="search-bar" (ngSubmit)="onSearch()">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        [(ngModel)]="query"
+        name="query"
+        placeholder="Buscar película o serie en TMDb (ej: Dune, Breaking Bad)..."
+      />
+      @if (query) {
+        <button type="button" class="clear-btn" (click)="clearSearch()" title="Limpiar">✕</button>
+      }
+    </div>
+
+    <select [(ngModel)]="mediaType" name="mediaType" class="search-select">
+      <option value="multi">Todos</option>
+      <option value="movie">🎬 Películas</option>
+      <option value="tv">📺 Series</option>
+    </select>
+
+    <button type="submit" class="btn btn-primary" [disabled]="searching">
+      {{ searching ? 'Buscando...' : 'Buscar' }}
+    </button>
+  </form>
+
+  @if (results.length > 0) {
+    <div class="results-panel">
+      <div class="results-header">
+        <span>Resultados encontrados ({{ results.length }})</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="clearSearch()">Cerrar resultados</button>
+      </div>
+
+      <div class="results-grid">
+        @for (item of results; track item.tmdb_id) {
+          <div class="result-card">
+            <img
+              [src]="item.poster_path ? 'https://image.tmdb.org/t/p/w200' + item.poster_path : 'https://via.placeholder.com/200x300?text=Sin+Poster'"
+              [alt]="item.title"
+              class="result-poster"
+            />
+            <div class="result-info">
+              <div class="result-top">
+                <span class="badge-type" [class.is-tv]="item.media_type === 'tv'">
+                  {{ item.media_type === 'movie' ? 'Película' : 'Serie' }}
+                </span>
+                <span class="result-rating">⭐ {{ item.vote_average ? item.vote_average.toFixed(1) : 'N/A' }}</span>
+              </div>
+
+              <h4 class="result-title" [title]="item.title">{{ item.title }}</h4>
+              @if (item.release_date) {
+                <span class="result-year">{{ item.release_date.slice(0, 4) }}</span>
+              }
+
+              <button
+                type="button"
+                class="btn btn-primary btn-sm btn-add"
+                [disabled]="addingIds.has(item.tmdb_id)"
+                (click)="addToBacklog(item)"
+              >
+                {{ addingIds.has(item.tmdb_id) ? 'Agregando...' : '+ Agregar' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

@@ -1,0 +1,457 @@
+<div class="app-shell">
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+  <header class="navbar">
+    <div class="navbar-inner">
+      <div class="brand">
+        <span class="brand-icon">🎬</span>
+        <span class="brand-title">CineTrack</span>
+      </div>
+
+      <!-- Navegación Tablero / Estadísticas -->
+      <nav class="nav-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'board'"
+          (click)="activeTab = 'board'"
+        >
+          📋 Tablero
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="activeTab === 'stats'"
+          (click)="activeTab = 'stats'"
+        >
+          📊 Estadísticas
+        </button>
+      </nav>
+
+      <!-- Filtros por tipo + Cerrar sesión -->
+      <div class="nav-actions">
+        @if (activeTab === 'board') {
+          <div class="filter-pills">
+            <button
+              type="button"
+              class="pill-btn"
+              [class.active]="typeFilter === 'all'"
+              (click)="typeFilter = 'all'"
+            >
+              Todos
+            </button>
+            <button
+              type="button"
+              class="pill-btn"
+              [class.active]="typeFilter === 'movie'"
+              (click)="typeFilter = 'movie'"
+            >
+              Películas
+            </button>
+            <button
+              type="button"
+              class="pill-btn"
+              [class.active]="typeFilter === 'tv'"
+              (click)="typeFilter = 'tv'"
+            >
+              Series
+            </button>
+          </div>
+        }
+
+        <button type="button" class="btn btn-ghost btn-sm" (click)="logout()">
+          Salir
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <!-- ==================== VISTA 1: TABLERO KANBAN ==================== -->
+    @if (activeTab === 'board') {
+      <app-search (itemAdded)="loadLibrary()"></app-search>
+
+      @if (loading) {
+        <div class="loading-box">Cargando tu biblioteca...</div>
+      } @else {
+        <div class="kanban-grid">
+          <!-- COLUMNA 1: PENDIENTES -->
+          <section class="kanban-col">
+            <div class="col-header">
+              <h2>📌 Pendientes</h2>
+              <span class="col-count">{{ getItemsByStatus('pending').length }}</span>
+            </div>
+
+            <div class="cards-stack">
+              @for (item of getItemsByStatus('pending'); track item.id) {
+                <article class="media-card">
+                  <div class="poster-wrap" (click)="openDetailModal(item)">
+                    <img
+                      [src]="item.media_item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.media_item.poster_path : 'https://via.placeholder.com/200x300?text=Sin+Poster'"
+                      [alt]="item.media_item.title"
+                    />
+                  </div>
+
+                  <div class="card-content">
+                    <div>
+                      <div class="card-top">
+                        <h3 class="card-title" (click)="openDetailModal(item)" [title]="item.media_item.title">
+                          @if (item.is_favorite) { ❤️ } {{ item.media_item.title }}
+                        </h3>
+                        <button type="button" class="icon-btn danger" title="Eliminar" (click)="deleteItem(item.id)">
+                          ✕
+                        </button>
+                      </div>
+
+                      <div class="card-meta">
+                        <span class="type-tag" [class.is-tv]="item.media_item.media_type === 'tv'">
+                          {{ item.media_item.media_type === 'movie' ? 'Película' : 'Serie' }}
+                        </span>
+
+                        <select
+                          class="priority-select"
+                          [ngClass]="{
+                            'prio-high': item.priority === 'high',
+                            'prio-medium': item.priority === 'medium',
+                            'prio-low': item.priority === 'low'
+                          }"
+                          [value]="item.priority"
+                          (change)="changePriority(item, $any($event.target).value)"
+                        >
+                          <option value="high">Alta</option>
+                          <option value="medium">Media</option>
+                          <option value="low">Baja</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="card-actions">
+                      <button type="button" class="btn btn-primary btn-sm flex-1" (click)="changeStatus(item, 'watching')">
+                        ▶ Empezar
+                      </button>
+                      <button type="button" class="btn btn-success btn-sm" title="Marcar como vista" (click)="changeStatus(item, 'finished')">
+                        ✓
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              } @empty {
+                <p class="empty-msg">No tenés títulos pendientes.</p>
+              }
+            </div>
+          </section>
+
+          <!-- COLUMNA 2: VIENDO AHORA -->
+          <section class="kanban-col col-watching">
+            <div class="col-header">
+              <h2 class="text-amber">🍿 Viendo ahora</h2>
+              <span class="col-count badge-amber">{{ getItemsByStatus('watching').length }}</span>
+            </div>
+
+            <div class="cards-stack">
+              @for (item of getItemsByStatus('watching'); track item.id) {
+                <article class="media-card">
+                  <div class="poster-wrap" (click)="openDetailModal(item)">
+                    <img
+                      [src]="item.media_item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.media_item.poster_path : 'https://via.placeholder.com/200x300?text=Sin+Poster'"
+                      [alt]="item.media_item.title"
+                    />
+                  </div>
+
+                  <div class="card-content">
+                    <div>
+                      <div class="card-top">
+                        <h3 class="card-title" (click)="openDetailModal(item)" [title]="item.media_item.title">
+                          @if (item.is_favorite) { ❤️ } {{ item.media_item.title }}
+                        </h3>
+                      </div>
+
+                      @if (item.media_item.media_type === 'tv') {
+                        <div class="tracker-box">
+                          <div class="tracker-row">
+                            <span class="tracker-label">Temp {{ item.current_season || 1 }}</span>
+                            <div class="stepper">
+                              <button type="button" (click)="updateProgress(item, 'current_season', -1)">-</button>
+                              <button type="button" (click)="updateProgress(item, 'current_season', 1)">+</button>
+                            </div>
+                          </div>
+
+                          <div class="tracker-row">
+                            <span class="tracker-label strong">Ep {{ item.current_episode || 1 }}</span>
+                            <div class="stepper">
+                              <button type="button" (click)="updateProgress(item, 'current_episode', -1)">-</button>
+                              <button type="button" class="accent" (click)="updateProgress(item, 'current_episode', 1)">+1</button>
+                            </div>
+                          </div>
+                        </div>
+                      } @else {
+                        <span class="type-tag">Película en curso</span>
+                      }
+                    </div>
+
+                    <div class="card-actions">
+                      <button type="button" class="btn btn-ghost btn-sm" title="Volver a pendientes" (click)="changeStatus(item, 'pending')">
+                        ↩
+                      </button>
+                      <button type="button" class="btn btn-success btn-sm flex-1" (click)="changeStatus(item, 'finished')">
+                        ✓ Terminada
+                      </button>
+                      <button type="button" class="btn btn-danger-ghost btn-sm" title="Eliminar" (click)="deleteItem(item.id)">
+                        🗑
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              } @empty {
+                <p class="empty-msg">No estás viendo nada en este momento.</p>
+              }
+            </div>
+          </section>
+
+          <!-- COLUMNA 3: COMPLETADAS -->
+          <section class="kanban-col col-completed">
+            <div class="col-header">
+              <h2 class="text-green">✅ Completadas</h2>
+              <span class="col-count badge-green">{{ getItemsByStatus('finished').length }}</span>
+            </div>
+
+            <div class="cards-stack">
+              @for (item of getItemsByStatus('finished'); track item.id) {
+                <article class="media-card">
+                  <div class="poster-wrap" (click)="openDetailModal(item)">
+                    <img
+                      [src]="item.media_item.poster_path ? 'https://image.tmdb.org/t/p/w300' + item.media_item.poster_path : 'https://via.placeholder.com/200x300?text=Sin+Poster'"
+                      [alt]="item.media_item.title"
+                    />
+                  </div>
+
+                  <div class="card-content">
+                    <div>
+                      <div class="card-top">
+                        <h3 class="card-title" (click)="openDetailModal(item)" [title]="item.media_item.title">
+                          @if (item.is_favorite) { ❤️ } {{ item.media_item.title }}
+                        </h3>
+                        <button type="button" class="icon-btn danger" title="Eliminar" (click)="deleteItem(item.id)">
+                          ✕
+                        </button>
+                      </div>
+
+                      <div class="card-meta">
+                        <span class="type-tag" [class.is-tv]="item.media_item.media_type === 'tv'">
+                          {{ item.media_item.media_type === 'movie' ? 'Película' : 'Serie' }}
+                        </span>
+                        @if (item.personal_rating) {
+                          <span class="user-score">⭐ {{ item.personal_rating }}/10</span>
+                        }
+                      </div>
+
+                      @if (item.review) {
+                        <p class="card-note">"{{ item.review }}"</p>
+                      }
+                    </div>
+
+                    <div class="card-actions">
+                      <button type="button" class="btn btn-ghost btn-sm flex-1" (click)="openDetailModal(item)">
+                        {{ item.personal_rating || item.review ? 'Editar reseña' : '⭐ Calificar' }}
+                      </button>
+                      <button type="button" class="btn btn-ghost btn-sm" title="Volver a viendo" (click)="changeStatus(item, 'watching')">
+                        ↩
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              } @empty {
+                <p class="empty-msg">Aún no marcaste títulos como vistos.</p>
+              }
+            </div>
+          </section>
+        </div>
+      }
+    }
+
+    <!-- ==================== VISTA 2: ESTADÍSTICAS ==================== -->
+    @if (activeTab === 'stats') {
+      <div class="stats-view">
+        <div class="stats-header">
+          <div>
+            <h2>📊 Resumen de tu Actividad</h2>
+            <p>Métricas en tiempo real basadas en tu biblioteca</p>
+          </div>
+          <button type="button" class="btn btn-ghost btn-sm" (click)="activeTab = 'board'">
+            ← Volver al tablero
+          </button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <span class="kpi-label">Total en biblioteca</span>
+            <strong class="kpi-value">{{ totalItems }}</strong>
+            <span class="kpi-sub">{{ getItemsByStatus('pending').length }} pendientes · {{ getItemsByStatus('watching').length }} en curso</span>
+          </div>
+
+          <div class="kpi-card accent-green">
+            <span class="kpi-label">Películas vistas</span>
+            <strong class="kpi-value">{{ completedMovies }}</strong>
+            <span class="kpi-sub">Completadas al 100%</span>
+          </div>
+
+          <div class="kpi-card accent-blue">
+            <span class="kpi-label">Series y Episodios</span>
+            <strong class="kpi-value">{{ completedSeries }} <small>series</small></strong>
+            <span class="kpi-sub">{{ totalEpisodesWatched }} episodios registrados</span>
+          </div>
+
+          <div class="kpi-card accent-amber">
+            <span class="kpi-label">Promedio personal</span>
+            <strong class="kpi-value">⭐ {{ averageRating }}</strong>
+            <span class="kpi-sub">{{ favoriteItems.length }} marcadas como favoritas</span>
+          </div>
+        </div>
+
+        <div class="progress-panel">
+          <div class="progress-top">
+            <span>Progreso general del backlog</span>
+            <strong>{{ completionRate }}% completado</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="completionRate"></div>
+          </div>
+        </div>
+
+        <div class="lists-grid">
+          <div class="panel-box">
+            <h3>🏆 Top 5 Mejor Puntuadas</h3>
+            @for (item of topRatedItems; track item.id; let i = $index) {
+              <div class="rank-row" (click)="openDetailModal(item)">
+                <div class="rank-left">
+                  <span class="rank-num">#{{ i + 1 }}</span>
+                  <img
+                    [src]="item.media_item.poster_path ? 'https://image.tmdb.org/t/p/w200' + item.media_item.poster_path : 'https://via.placeholder.com/80x120'"
+                    [alt]="item.media_item.title"
+                  />
+                  <div>
+                    <strong>{{ item.media_item.title }}</strong>
+                    <span>{{ item.media_item.media_type === 'movie' ? 'Película' : 'Serie' }}</span>
+                  </div>
+                </div>
+                <span class="score-pill">⭐ {{ item.personal_rating }}/10</span>
+              </div>
+            } @empty {
+              <p class="empty-msg">Todavía no calificaste ningún título.</p>
+            }
+          </div>
+
+          <div class="panel-box">
+            <h3>❤️ Tus Favoritas</h3>
+            @for (item of favoriteItems; track item.id) {
+              <div class="rank-row" (click)="openDetailModal(item)">
+                <div class="rank-left">
+                  <img
+                    [src]="item.media_item.poster_path ? 'https://image.tmdb.org/t/p/w200' + item.media_item.poster_path : 'https://via.placeholder.com/80x120'"
+                    [alt]="item.media_item.title"
+                  />
+                  <div>
+                    <strong>{{ item.media_item.title }}</strong>
+                    <span>{{ item.media_item.media_type === 'movie' ? 'Película' : 'Serie' }}</span>
+                  </div>
+                </div>
+                <span class="status-pill">{{ item.status === 'finished' ? 'Vista' : item.status === 'watching' ? 'Viendo' : 'Pendiente' }}</span>
+              </div>
+            } @empty {
+              <p class="empty-msg">Abrí un título y tocá "Favorita" para destacarlo acá.</p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </main>
+
+  <!-- ==================== MODAL DE DETALLE ==================== -->
+  @if (selectedItem) {
+    <div class="modal-backdrop" (click)="closeModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3>{{ selectedItem.media_item.title }}</h3>
+            @if (detailData?.release_date) {
+              <span class="modal-date">Estreno: {{ detailData.release_date }}</span>
+            }
+          </div>
+          <button type="button" class="icon-btn" (click)="closeModal()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          @if (loadingDetail) {
+            <div class="loading-box">Consultando TMDb y plataformas en Argentina...</div>
+          } @else {
+            <div class="modal-hero">
+              <img
+                [src]="selectedItem.media_item.poster_path ? 'https://image.tmdb.org/t/p/w300' + selectedItem.media_item.poster_path : 'https://via.placeholder.com/200x300'"
+                [alt]="selectedItem.media_item.title"
+                class="modal-poster"
+              />
+
+              <div class="modal-info">
+                @if (detailData?.genres?.length) {
+                  <div class="genres-row">
+                    @for (g of detailData.genres; track g) {
+                      <span class="genre-chip">{{ g }}</span>
+                    }
+                  </div>
+                }
+
+                <p class="synopsis">{{ detailData?.overview || 'Sin sinopsis disponible en español.' }}</p>
+
+                <div class="providers-box">
+                  <h4>🇦🇷 Dónde ver en Argentina</h4>
+                  @if (detailData?.watch_providers?.flatrate?.length) {
+                    <div class="providers-list">
+                      @for (p of detailData.watch_providers.flatrate; track p.provider_name) {
+                        <div class="provider-chip">
+                          <img [src]="'https://image.tmdb.org/t/p/w92' + p.logo_path" [alt]="p.provider_name" />
+                          <span>{{ p.provider_name }}</span>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="no-providers">No disponible en suscripción plana actualmente en AR.</p>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="review-form">
+              <h4>✍️ Tu valoración personal</h4>
+              <div class="review-controls">
+                <div class="field">
+                  <label>Puntaje (1 a 10)</label>
+                  <input type="number" min="1" max="10" [(ngModel)]="editRating" placeholder="Ej: 9" />
+                </div>
+
+                <button
+                  type="button"
+                  class="btn fav-btn"
+                  [class.is-fav]="editFavorite"
+                  (click)="editFavorite = !editFavorite"
+                >
+                  {{ editFavorite ? '❤️ En tus favoritas' : '🤍 Marcar como favorita' }}
+                </button>
+              </div>
+
+              <div class="field">
+                <label>Reseña o notas</label>
+                <textarea rows="3" [(ngModel)]="editNotes" placeholder="¿Qué te pareció?"></textarea>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="saveReview()" [disabled]="savingReview">
+            {{ savingReview ? 'Guardando...' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
