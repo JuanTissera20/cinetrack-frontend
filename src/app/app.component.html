@@ -1,1 +1,55 @@
-<router-outlet></router-outlet>
+<!-- NAVBAR -->
+<header class="navbar">
+  <div class="navbar-brand" routerLink="/">
+    <span class="logo-icon">🎬</span>
+    <h1>CineTrack</h1>
+  </div>
+
+  <nav class="navbar-links">
+    <a routerLink="/explorar" routerLinkActive="active">Explorar</a>
+    
+    @if (isLoggedIn) {
+      <a routerLink="/tablero" routerLinkActive="active">Mi Tablero</a>
+      <a routerLink="/estadisticas" routerLinkActive="active">Estadísticas</a>
+    }
+  </nav>
+
+  <div class="navbar-actions">
+    @if (!isLoggedIn) {
+      <button (click)="abrirModalLogin()" class="btn-primary">Iniciar Sesión</button>
+    } @else {
+      <div class="user-menu">
+        <span class="user-greeting">Hola, <strong>{{ username }}</strong></span>
+        <button (click)="cerrarSesion()" class="btn-outline">Salir</button>
+      </div>
+    }
+  </div>
+</header>
+
+<!-- ACÁ SE RENDERIZAN TUS VISTAS (Explorar, Tablero Kanban, Estadísticas) -->
+<main class="container">
+  <router-outlet />
+</main>
+
+<!-- MODAL DE INICIO DE SESIÓN -->
+@if (mostrarLoginModal) {
+  <div class="modal-backdrop" (click)="cerrarModalLogin()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <button (click)="cerrarModalLogin()" class="modal-close">&times;</button>
+      <h2>Iniciar Sesión</h2>
+      <p class="modal-subtitle">Accedé a tu tablero Kanban y tus estadísticas</p>
+      
+      <form (ngSubmit)="iniciarSesion()">
+        <div class="form-group">
+          <label for="email">Correo o Usuario</label>
+          <input type="text" id="email" [(ngModel)]="loginData.email" name="email" required placeholder="tu@email.com" />
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" [(ngModel)]="loginData.password" name="password" required placeholder="••••••••" />
+        </div>
+        <button type="submit" class="btn-primary btn-full">Entrar</button>
+      </form>
+    </div>
+  </div>
+}

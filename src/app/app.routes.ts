@@ -3,7 +3,8 @@ import { LoginComponent } from './components/login/login.component';
 import { BoardComponent } from './components/board/board.component';
 
 export const routes: Routes = [
-  { path: 'login', component: LoginComponent },
+  {path: '', redirectTo: 'board', pathMatch: 'full'},
   { path: 'board', component: BoardComponent },
-  { path: '', redirectTo: 'login', pathMatch: 'full' }
+  { path: 'login', component: LoginComponent },
+  { path: '**', redirectTo: 'board' }
 ];

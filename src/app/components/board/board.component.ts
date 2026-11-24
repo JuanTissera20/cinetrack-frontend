@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, NgClass } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MediaService } from '../../services/media.service';
 import { AuthService } from '../../services/auth.service';
 import { SearchComponent } from '../search/search.component';
@@ -9,17 +9,17 @@ import { SearchComponent } from '../search/search.component';
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, NgClass, FormsModule, SearchComponent],
+  imports: [CommonModule, RouterLink, NgClass, FormsModule, SearchComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })
 export class BoardComponent implements OnInit {
   private mediaService = inject(MediaService);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService); // 👈 Público para usarlo en board.component.html
   private router = inject(Router);
 
   library: any[] = [];
-  loading = true;
+  loading = false; // 👈 Arranca en false para no trabar la vista de invitados
   activeTab: 'board' | 'stats' = 'board';
   typeFilter: 'all' | 'movie' | 'tv' = 'all';
 
@@ -33,11 +33,11 @@ export class BoardComponent implements OnInit {
   editFavorite = false;
 
   ngOnInit(): void {
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/login']);
-      return;
+    // Si tiene sesión iniciada, cargamos su biblioteca.
+    // Si es invitado, no hace nada y solo se muestra <app-search> en el HTML.
+    if (this.authService.isLoggedIn()) {
+      this.loadLibrary();
     }
-    this.loadLibrary();
   }
 
   loadLibrary(): void {
@@ -118,7 +118,6 @@ export class BoardComponent implements OnInit {
     this.detailData = null;
     this.loadingDetail = true;
 
-    // Cargamos los valores actuales del usuario en el formulario del modal
     this.editNotes = item.review || '';
     this.editRating = item.personal_rating ?? null;
     this.editFavorite = !!item.is_favorite;
@@ -170,7 +169,7 @@ export class BoardComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);
+    this.library = []; // 👈 Limpiamos la lista en memoria sin expulsar al usuario a /login
   }
 
   // --- ESTADÍSTICAS ---
