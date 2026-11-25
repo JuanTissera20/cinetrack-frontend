@@ -65,10 +65,9 @@
             Salir
           </button>
         } @else {
-          <!-- Botón visible cuando entra sin cuenta -->
-          <a routerLink="/login" class="btn btn-primary btn-sm">
+          <button type="button" class="btn btn-primary btn-sm" (click)="openLoginModal()">
             Iniciar Sesión
-          </a>
+          </button>
         }
       </div>
     </div>
@@ -77,7 +76,6 @@
   <main class="main-container">
     <!-- ==================== VISTA 1: BUSCADOR + TABLERO ==================== -->
     @if (activeTab === 'board' || !authService.isLoggedIn()) {
-      <!-- El buscador de TMDb siempre está disponible -->
       <app-search (itemAdded)="loadLibrary()"></app-search>
 
       @if (authService.isLoggedIn()) {
@@ -278,16 +276,18 @@
           </div>
         }
       } @else {
-        <!-- ESTADO INVITADO (Sin sesión iniciada) -->
+        <!-- ESTADO INVITADO -->
         <div class="guest-banner">
           <h3>📋 Tu tablero personal te espera</h3>
           <p>Buscá cualquier película o serie arriba para explorar el catálogo. Iniciá sesión para guardarlas en tu lista, llevar control de episodios y ver tus estadísticas.</p>
-          <a routerLink="/login" class="btn btn-primary">Iniciar sesión o crear cuenta</a>
+          <button type="button" class="btn btn-primary" (click)="openLoginModal()">
+            Iniciar sesión o crear cuenta
+          </button>
         </div>
       }
     }
 
-    <!-- ==================== VISTA 2: ESTADÍSTICAS (Solo logueado) ==================== -->
+    <!-- ==================== VISTA 2: ESTADÍSTICAS ==================== -->
     @if (authService.isLoggedIn() && activeTab === 'stats') {
       <div class="stats-view">
         <div class="stats-header">
@@ -470,6 +470,16 @@
             {{ savingReview ? 'Guardando...' : 'Guardar cambios' }}
           </button>
         </div>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== MODAL DE INICIO DE SESIÓN ==================== -->
+  @if (showLoginModal) {
+    <div class="modal-backdrop login-modal-backdrop" (click)="closeLoginModal()">
+      <div class="login-modal-box" (click)="$event.stopPropagation()">
+        <button type="button" class="icon-btn login-close-btn" (click)="closeLoginModal()">✕</button>
+        <app-login [isModal]="true" (loginSuccess)="onLoginSuccess()"></app-login>
       </div>
     </div>
   }

@@ -5,11 +5,12 @@ import { Router, RouterLink } from '@angular/router';
 import { MediaService } from '../../services/media.service';
 import { AuthService } from '../../services/auth.service';
 import { SearchComponent } from '../search/search.component';
+import { LoginComponent } from '../login/login.component';
 
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, RouterLink, NgClass, FormsModule, SearchComponent],
+  imports: [CommonModule, NgClass, FormsModule, SearchComponent, LoginComponent],
   templateUrl: './board.component.html',
   styleUrl: './board.component.css'
 })
@@ -214,5 +215,19 @@ export class BoardComponent implements OnInit {
       .filter(i => i.personal_rating !== null && i.personal_rating > 0)
       .sort((a, b) => b.personal_rating - a.personal_rating)
       .slice(0, 5);
+  }
+  showLoginModal = false; // 👈 Controla el modal de login
+
+  openLoginModal(): void {
+    this.showLoginModal = true;
+  }
+
+  closeLoginModal(): void {
+    this.showLoginModal = false;
+  }
+
+  onLoginSuccess(): void {
+    this.showLoginModal = false;
+    this.loadLibrary(); // 👈 Apenas inicia sesión, carga tu tablero encima sin recargar la página
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -12,6 +12,8 @@ import { AuthService } from '../../services/auth.service';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  @Input() isModal = false; // 👈 Indica si se está mostrando como modal
+  @Output() loginSuccess = new EventEmitter<void>(); // 👈 Avisa al padre cuando entra
 
   username = '';
   password = '';
@@ -25,9 +27,13 @@ export class LoginComponent {
     this.errorMessage = '';
 
     this.authService.login({username: this.username, password: this.password}).subscribe({
-      next: () => {
+    next: () => {
         this.loading = false;
-        this.router.navigate(['/board']);
+        if (this.isModal) {
+          this.loginSuccess.emit(); // Cierra el modal y carga la biblioteca
+        } else {
+          this.router.navigate(['/board']);
+        }
       },
       error: () => {
         this.loading = false;

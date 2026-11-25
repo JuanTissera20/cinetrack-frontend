@@ -1,8 +1,9 @@
 :root {
-  --bg-dark: #0f1117;
+  --bg-dark: #0b0f19;
   --bg-card: #1a1d27;
   --accent: #e50914;
   --accent-hover: #f40612;
+  --text-primary: #f8fafc;
   --text-main: #f3f4f6;
   --text-muted: #9ca3af;
   --border-color: #2d3242;
@@ -17,7 +18,9 @@
 
 body {
   background-color: var(--bg-dark);
-  color: var(--text-main);
+  color: var(--text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
   line-height: 1.5;
 }
 
@@ -28,6 +31,7 @@ body {
 /* Navbar */
 .navbar {
   display: flex;
+  box-shadow: 0 5px 6px #1f2945 ;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 5%;
