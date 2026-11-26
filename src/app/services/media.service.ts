@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../enviroments/enviroment.development';
 
@@ -38,4 +39,8 @@ export class MediaService {
   removeFromLibrary(id: number) {
     return this.http.delete(`${this.apiUrl}/library/${id}/`);
   }
+
+  getTrending(): Observable<any> {
+  return this.http.get<any>(`${this.apiUrl}/trending/`);
+}
 }

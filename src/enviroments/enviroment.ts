@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://127.0.0.1:8000/api'
+  apiUrl: 'cinetrack-backend-production-97e0e977.up.railway.app'
 };

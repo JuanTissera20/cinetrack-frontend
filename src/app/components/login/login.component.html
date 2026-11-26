@@ -1,4 +1,4 @@
-<div class="login-wrapper">
+<div class="login-wrapper" [class.in-modal]="isModal">
   <div class="login-card">
     <div class="login-header">
       <span class="logo-icon">🎬</span>
@@ -34,7 +34,7 @@
           required
         />
       </div>
-
+      
       <button type="submit" class="btn btn-primary btn-full" [disabled]="loading">
         {{ loading ? 'Ingresando...' : 'Iniciar sesión' }}
       </button>

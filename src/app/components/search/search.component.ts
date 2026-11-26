@@ -1,67 +1,95 @@
-import { Component, EventEmitter, inject, output } from '@angular/core';
+import { Component, OnInit, inject, output } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
 import { MediaService } from '../../services/media.service';
-
 
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, DecimalPipe],
   templateUrl: './search.component.html',
   styleUrl: './search.component.css'
 })
-export class SearchComponent {
+export class SearchComponent implements OnInit {
   private mediaService = inject(MediaService);
-  //Output() itemAdded = new EventEmitter<void>();
-  // Evento para avisarle al tablero que se agregó una película nueva
+  private authService = inject(AuthService);
+
+  loginRequired = output<void>();
   itemAdded = output<void>();
 
   query = '';
   mediaType: 'movie' | 'tv' = 'movie';
   results: any[] = [];
+  isTrendingView = false;
   loading = false;
-  addedIds = new Set<number>();
   searching = false;
+  addingIds = new Set<number>();
+  addedIds = new Set<number>();
 
-  onSearch() {
-    if (!this.query.trim()) return;
+  ngOnInit(): void {
+    this.loadTrending();
+  }
+
+  loadTrending(): void {
     this.loading = true;
     this.searching = true;
-    
-    this.mediaService.searchTmdb(this.query, this.mediaType).subscribe({
-      next: (res) => {
-        this.results = res.results || [];
+    this.isTrendingView = true;
+
+    this.mediaService.getTrending().subscribe({
+      next: (res: any) => {
+        this.results = Array.isArray(res) ? res : (res.results || []);
         this.loading = false;
+        this.searching = false;
       },
       error: () => {
         this.loading = false;
+        this.searching = false;
       }
     });
   }
-  clearSearch(): void {
-  this.query = '';
-  this.results = [];
+
+  onSearch(): void {
+    if (!this.query.trim()) {
+      this.loadTrending();
+      return;
+    }
+
+    this.loading = true;
+    this.searching = true;
+    this.isTrendingView = false;
+
+    this.mediaService.searchTmdb(this.query, this.mediaType).subscribe({
+      next: (res: any) => {
+        this.results = Array.isArray(res) ? res : (res.results || []);
+        this.loading = false;
+        this.searching = false;
+      },
+      error: () => {
+        this.loading = false;
+        this.searching = false;
+      }
+    });
   }
 
-  addingIds = new Set<number>();
+  clearSearch(): void {
+    this.query = '';
+    this.loadTrending();
+  }
 
   addToBacklog(item: any, status: string = 'pending'): void {
-    this.addingIds.add(item.tmdb_id);
-
-    this.mediaService.addToLibrary(item).subscribe({
-    next: () => {
-      this.addingIds.delete(item.tmdb_id);
-      this.itemAdded.emit();
-    },
-    error: () => {
-      this.addingIds.delete(item.tmdb_id);
+    if (!this.authService.isLoggedIn()) {
+      this.loginRequired.emit();
+      return;
     }
-  })
+
+    const itemId = item.tmdb_id ?? item.id;
+    this.addingIds.add(itemId);
 
     const payload = {
-      tmdb_id: item.id,
+      tmdb_id: itemId,
       title: item.title || item.name,
-      media_type: this.mediaType,
+      media_type: item.media_type || this.mediaType,
       release_date: item.release_date || item.first_air_date || null,
       poster_path: item.poster_path || null,
       overview: item.overview || '',
@@ -72,8 +100,12 @@ export class SearchComponent {
 
     this.mediaService.addToLibrary(payload).subscribe({
       next: () => {
-        this.addedIds.add(item.id);
+        this.addingIds.delete(itemId);
+        this.addedIds.add(itemId);
         this.itemAdded.emit();
+      },
+      error: () => {
+        this.addingIds.delete(itemId);
       }
     });
   }
