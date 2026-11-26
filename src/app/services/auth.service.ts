@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs/operators';
-import { environment } from '../../enviroments/enviroment.development';
+import { environment } from '../../enviroments/enviroment';
 
 @Injectable({
   providedIn: 'root'
